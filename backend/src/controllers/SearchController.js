@@ -19,7 +19,7 @@ module.exports = {
                 }
             }
         });
-
+        console.log('ss')
         return response.json(devs);
     }
 }
