@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Image, View, Text, TextInput, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Callout } from 'react-native-maps';
 import { requestPermissionsAsync, getCurrentPositionAsync } from 'expo-location';
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons';
 
-import api from '../services/api'
+import api from '../services/api';
+import { connect, disconnect, subscribeToNewDevs } from '../services/socket';
 
 function Main({ navigation }) {
     const [devs, setDevs] = useState([]);
@@ -29,6 +30,19 @@ function Main({ navigation }) {
         loadInitialPOsition();
     }, []);
 
+    useEffect(() => {
+        subscribeToNewDevs(dev => setDevs([...devs, dev]));
+    }, [devs]);
+    function setupWebsocket() {
+        disconnect();
+        const { latitude, longitude} = currentRegion;
+        connect(
+            latitude,
+            longitude,
+            techs
+        );
+    }
+
     async function loadDevs() {
         const { latitude, longitude } = currentRegion;
         const response = await api.get('/search', {
@@ -40,6 +54,7 @@ function Main({ navigation }) {
         });
 
         setDevs(response.data);
+        setupWebsocket();
     }
 
     function handleRegionChanged(region) {
@@ -57,7 +72,7 @@ function Main({ navigation }) {
                 style={{ flex: 1 }} >
                 {devs.map(dev => (
                     <Marker
-                        key={dev.id}
+                        key={dev._id}
                         coordinate={{
                             latitude: dev.location.coordinates[1],
                             longitude: dev.location.coordinates[0]
